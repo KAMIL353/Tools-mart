@@ -623,7 +623,7 @@ Thank you! 🙏`);
                 const { data, error } = await supabaseClient
                     .from('products')
                     .select('*')
-                    .order('created_at', { ascending: True });
+                    .order('created_at', { ascending: true });
 
                 if (error) throw error;
 
