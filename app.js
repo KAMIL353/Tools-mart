@@ -449,7 +449,28 @@ document.addEventListener('DOMContentLoaded', () => {
             card.className = 'catalog-card';
             card.style.position = 'relative';
             
-            const whatsappText = encodeURIComponent(`Hi RIMZAN MOTORS & TOOLSMART, I am looking for details and pricing on: ${item.brand || ''} ${item.name || ''} (Model: ${item.modelNumber || ''}). Please let me know the stock status and pricing.`);
+            const stockStatus = item.inStock ? '✅ In Stock' : '🔄 Order Only';
+            const whatsappText = encodeURIComponent(
+`🔧 *Product Inquiry — RIMZAN MOTORS & TOOLSMART*
+
+Hello! I would like to get details and pricing for the following product:
+
+━━━━━━━━━━━━━━━━━━━━
+🏷️ *Brand:* ${item.brand || 'N/A'}
+🔩 *Product:* ${item.name || 'N/A'}
+📋 *Model No:* ${item.modelNumber || 'N/A'}
+⚡ *Power:* ${item.power || 'N/A'}
+📐 *Size:* ${item.size || 'N/A'}
+⚖️ *Weight:* ${item.weight || 'N/A'}
+📦 *Availability:* ${stockStatus}
+━━━━━━━━━━━━━━━━━━━━
+
+Could you please share:
+• 💰 Best price / offer
+• 🚚 Delivery options
+• 🛡️ Warranty details
+
+Thank you! 🙏`);
             
             // Render custom image if present
             const imageMarkup = item.image ? `
