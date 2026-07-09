@@ -634,12 +634,14 @@ Thank you! 🙏`);
                         brand: item.brand || '',
                         name: item.name,
                         modelNumber: item.modelNumber || '',
+                        modelnumber: item.modelNumber || '',
                         power: item.power || '',
                         size: item.size || '',
                         weight: item.weight || '',
                         function: item.function || '',
                         category: item.category,
                         inStock: item.inStock,
+                        instock: item.inStock,
                         image: item.image
                     }));
                     
@@ -650,7 +652,20 @@ Thank you! 🙏`);
                     if (seedError) throw seedError;
                     catalogData = [...initialCatalogData];
                 } else {
-                    catalogData = data;
+                    // Map data robustly to support both lowercase (Postgres default) and camelCase properties
+                    catalogData = data.map(item => ({
+                        id: item.id,
+                        brand: item.brand || '',
+                        name: item.name,
+                        modelNumber: item.modelNumber || item.modelnumber || '',
+                        power: item.power || '',
+                        size: item.size || '',
+                        weight: item.weight || '',
+                        function: item.function || '',
+                        category: item.category,
+                        inStock: item.inStock !== undefined ? item.inStock : (item.instock !== undefined ? item.instock : true),
+                        image: item.image
+                    }));
                     console.log('Catalog loaded from Supabase database successfully.');
                 }
                 
@@ -1221,12 +1236,14 @@ Thank you! 🙏`);
                 brand: brand || '',
                 name: name,
                 modelNumber: model || '',
+                modelnumber: model || '',
                 power: power || '',
                 size: size || '',
                 weight: weight || '',
                 function: coreFunction || '',
                 category: category,
                 inStock: stockStatus === 'true',
+                instock: stockStatus === 'true',
                 image: currentBase64Image || null
             };
 
