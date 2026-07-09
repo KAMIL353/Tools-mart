@@ -190,6 +190,7 @@ const initialCatalogData = [
 
 // Load catalog data from localStorage if exists, else fallback to initial defaults
 let catalogData = [];
+// Local fallback loading
 try {
     const storedData = localStorage.getItem('tools_mart_catalog');
     const isInitialized = localStorage.getItem('tools_mart_catalog_initialized');
@@ -198,11 +199,8 @@ try {
         catalogData = JSON.parse(storedData);
     } else {
         catalogData = [...initialCatalogData];
-        localStorage.setItem('tools_mart_catalog', JSON.stringify(catalogData));
-        localStorage.setItem('tools_mart_catalog_initialized', 'true');
     }
 } catch (e) {
-    console.error('Failed to access or parse localStorage catalog data:', e);
     catalogData = [...initialCatalogData];
 }
 
@@ -600,8 +598,55 @@ Thank you! 🙏`);
         renderCatalog();
     });
 
+    // Load products database from API (fallback to localStorage/defaults)
+    async function loadCatalogDatabase() {
+        try {
+            const response = await fetch('/api/products');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.initialized === false) {
+                    // Database exists but is not initialized, initialize it with default products
+                    console.log('API database not initialized. Seeding default products...');
+                    await fetch('/api/products/initialize', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(initialCatalogData)
+                    });
+                    catalogData = [...initialCatalogData];
+                } else {
+                    catalogData = data;
+                    console.log('Catalog loaded from backend API database.', catalogData);
+                }
+                // Sync back to local storage
+                try {
+                    localStorage.setItem('tools_mart_catalog', JSON.stringify(catalogData));
+                    localStorage.setItem('tools_mart_catalog_initialized', 'true');
+                } catch (e) {}
+            } else {
+                throw new Error('API returned error status');
+            }
+        } catch (err) {
+            console.warn('Backend API database unavailable, using localStorage database:', err);
+            // Fallback load from localStorage
+            try {
+                const storedData = localStorage.getItem('tools_mart_catalog');
+                const isInitialized = localStorage.getItem('tools_mart_catalog_initialized');
+                if (storedData && isInitialized === 'true') {
+                    catalogData = JSON.parse(storedData);
+                } else {
+                    catalogData = [...initialCatalogData];
+                    localStorage.setItem('tools_mart_catalog', JSON.stringify(catalogData));
+                    localStorage.setItem('tools_mart_catalog_initialized', 'true');
+                }
+            } catch (e) {
+                catalogData = [...initialCatalogData];
+            }
+        }
+        renderCatalog();
+    }
+
     // Initial render
-    renderCatalog();
+    loadCatalogDatabase();
 
     // ==========================================================================
     // 7. GENERATOR LOAD CALCULATOR
@@ -887,8 +932,19 @@ Thank you! 🙏`);
     }
 
     if (deleteConfirmSubmit) {
-        deleteConfirmSubmit.addEventListener('click', () => {
+        deleteConfirmSubmit.addEventListener('click', async () => {
             if (productIdToDelete) {
+                // Delete from backend API
+                try {
+                    await fetch('/api/products/delete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: productIdToDelete })
+                    });
+                } catch (err) {
+                    console.warn('API delete request failed, proceeding client-side:', err);
+                }
+
                 catalogData = catalogData.filter(item => String(item.id) !== String(productIdToDelete));
                 try {
                     localStorage.setItem('tools_mart_catalog', JSON.stringify(catalogData));
@@ -1059,9 +1115,8 @@ Thank you! 🙏`);
         });
     }
 
-    // New Product Form Submission logic
     if (adminAddProductForm) {
-        adminAddProductForm.addEventListener('submit', (e) => {
+        adminAddProductForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const brand = document.getElementById('prod-brand').value.trim();
@@ -1094,6 +1149,17 @@ Thank you! 🙏`);
                 inStock: stockStatus === 'true',
                 image: currentBase64Image || null
             };
+
+            // Add to backend API
+            try {
+                await fetch('/api/products', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newProduct)
+                });
+            } catch (err) {
+                console.warn('API add product request failed, proceeding client-side:', err);
+            }
 
             // Insert into active database catalogData
             catalogData.push(newProduct);
