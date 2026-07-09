@@ -633,15 +633,13 @@ Thank you! 🙏`);
                         id: item.id,
                         brand: item.brand || '',
                         name: item.name,
-                        modelNumber: item.modelNumber || '',
-                        modelnumber: item.modelNumber || '',
+                        modelnumber: item.modelNumber || '', // Send lowercase matching Postgres
                         power: item.power || '',
                         size: item.size || '',
                         weight: item.weight || '',
                         function: item.function || '',
                         category: item.category,
-                        inStock: item.inStock,
-                        instock: item.inStock,
+                        instock: item.inStock,               // Send lowercase matching Postgres
                         image: item.image
                     }));
                     
@@ -1240,23 +1238,34 @@ Thank you! 🙏`);
                 brand: brand || '',
                 name: name,
                 modelNumber: model || '',
-                modelnumber: model || '',
                 power: power || '',
                 size: size || '',
                 weight: weight || '',
                 function: coreFunction || '',
                 category: category,
                 inStock: stockStatus === 'true',
-                instock: stockStatus === 'true',
                 image: currentBase64Image || null
             };
 
-            // 1. Add to Supabase
+            // 1. Add to Supabase (mapping to database lowercase columns)
             if (supabaseClient) {
                 try {
+                    const dbPayload = {
+                        id: newProduct.id,
+                        brand: newProduct.brand,
+                        name: newProduct.name,
+                        modelnumber: newProduct.modelNumber, // Map to modelnumber
+                        power: newProduct.power,
+                        size: newProduct.size,
+                        weight: newProduct.weight,
+                        function: newProduct.function,
+                        category: newProduct.category,
+                        instock: newProduct.inStock,         // Map to instock
+                        image: newProduct.image
+                    };
                     const { error } = await supabaseClient
                         .from('products')
-                        .insert([newProduct]);
+                        .insert([dbPayload]);
                     if (error) throw error;
                     console.log('Product saved to Supabase successfully.');
                 } catch (err) {
