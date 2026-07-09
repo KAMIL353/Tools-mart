@@ -651,6 +651,7 @@ Thank you! 🙏`);
 
                     if (seedError) throw seedError;
                     catalogData = [...initialCatalogData];
+                    showToast('Database initialized and seeded to Supabase Cloud.', 'success');
                 } else {
                     // Map data robustly to support both lowercase (Postgres default) and camelCase properties
                     catalogData = data.map(item => ({
@@ -667,6 +668,7 @@ Thank you! 🙏`);
                         image: item.image
                     }));
                     console.log('Catalog loaded from Supabase database successfully.');
+                    showToast('Showroom synchronized with Supabase Cloud.', 'success');
                 }
                 
                 // Cache locally
@@ -678,6 +680,7 @@ Thank you! 🙏`);
                 return;
             } catch (err) {
                 console.error('Supabase query failed, falling back to local storage:', err);
+                showToast('Cloud database sync offline. Using local backup.', 'warning');
             }
         }
 
