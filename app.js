@@ -193,7 +193,7 @@ const initialCatalogData = [
 // ==========================================================================
 // Fill in your Supabase project details to save changes to the cloud database
 const SUPABASE_URL = "https://hpwxuczayychwgiqdjow.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhwd3h1Y3pheXljaHdnaXFkam93Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MzYxODI5MywiZXhwIjoyMDk5MTk0MjkzfQ.reO2OuIzdS8s5wUX5CmdNiApiXzYnxx96YyYiKuHdQo";
+const SUPABASE_ANON_KEY = "sb_publishable_b5qCLiCkMauyWXIlwAMjvQ_x3PVH2K4";
 
 let supabaseClient = null;
 if (typeof supabase !== 'undefined' && SUPABASE_URL && SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_ANON_KEY && SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY') {
