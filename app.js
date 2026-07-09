@@ -189,10 +189,21 @@ const initialCatalogData = [
 ];
 
 // Load catalog data from localStorage if exists, else fallback to initial defaults
-let catalogData = JSON.parse(localStorage.getItem('tools_mart_catalog'));
-if (!catalogData || catalogData.length === 0) {
+let catalogData = [];
+try {
+    const storedData = localStorage.getItem('tools_mart_catalog');
+    const isInitialized = localStorage.getItem('tools_mart_catalog_initialized');
+    
+    if (storedData && isInitialized === 'true') {
+        catalogData = JSON.parse(storedData);
+    } else {
+        catalogData = [...initialCatalogData];
+        localStorage.setItem('tools_mart_catalog', JSON.stringify(catalogData));
+        localStorage.setItem('tools_mart_catalog_initialized', 'true');
+    }
+} catch (e) {
+    console.error('Failed to access or parse localStorage catalog data:', e);
     catalogData = [...initialCatalogData];
-    localStorage.setItem('tools_mart_catalog', JSON.stringify(catalogData));
 }
 
 // WhatsApp Target phone configuration
@@ -879,7 +890,11 @@ Thank you! 🙏`);
         deleteConfirmSubmit.addEventListener('click', () => {
             if (productIdToDelete) {
                 catalogData = catalogData.filter(item => String(item.id) !== String(productIdToDelete));
-                localStorage.setItem('tools_mart_catalog', JSON.stringify(catalogData));
+                try {
+                    localStorage.setItem('tools_mart_catalog', JSON.stringify(catalogData));
+                } catch (e) {
+                    console.error('Failed to save updated catalog to localStorage after deletion:', e);
+                }
                 toggleDeleteConfirmModal(false);
                 renderCatalog();
                 showToast('Product successfully deleted from the showroom.', 'success');
@@ -1084,7 +1099,11 @@ Thank you! 🙏`);
             catalogData.push(newProduct);
             
             // Save to localStorage
-            localStorage.setItem('tools_mart_catalog', JSON.stringify(catalogData));
+            try {
+                localStorage.setItem('tools_mart_catalog', JSON.stringify(catalogData));
+            } catch (e) {
+                console.error('Failed to save updated catalog to localStorage after adding product:', e);
+            }
 
             // Re-render views
             renderCatalog();
