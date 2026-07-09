@@ -495,31 +495,19 @@ Thank you! 🙏`);
                 <div class="card-top">
                     ${imageMarkup}
                     <div class="card-header-row" style="margin-top: 10px;">
-                        <span class="brand-badge">${item.brand}</span>
+                        ${item.brand ? `<span class="brand-badge">${item.brand}</span>` : ''}
                         <span class="stock-badge ${item.inStock ? 'instock' : 'order'}">${item.inStock ? 'In Stock' : 'Order Only'}</span>
                     </div>
                     <h3 class="catalog-card-title">${item.name}</h3>
                     
                     <div class="product-details-grid">
-                        <div class="detail-item">
-                            <span class="detail-label">Model:</span>
-                            <span class="detail-value">${item.modelNumber}</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Power:</span>
-                            <span class="detail-value">${item.power}</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Size:</span>
-                            <span class="detail-value">${item.size}</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Weight:</span>
-                            <span class="detail-value">${item.weight}</span>
-                        </div>
+                        ${item.modelNumber ? `<div class="detail-item"><span class="detail-label">Model:</span><span class="detail-value">${item.modelNumber}</span></div>` : ''}
+                        ${item.power ? `<div class="detail-item"><span class="detail-label">Power:</span><span class="detail-value">${item.power}</span></div>` : ''}
+                        ${item.size ? `<div class="detail-item"><span class="detail-label">Size:</span><span class="detail-value">${item.size}</span></div>` : ''}
+                        ${item.weight ? `<div class="detail-item"><span class="detail-label">Weight:</span><span class="detail-value">${item.weight}</span></div>` : ''}
                     </div>
                     
-                    <p class="catalog-card-desc"><strong>Function:</strong> ${item.function}</p>
+                    ${item.function ? `<p class="catalog-card-desc"><strong>Function:</strong> ${item.function}</p>` : ''}
                 </div>
                 <div class="card-bottom">
                     <a href="https://wa.me/${storeWhatsAppNumber}?text=${whatsappText}" target="_blank" rel="noopener" class="btn btn-outline btn-full btn-sm">
@@ -1071,22 +1059,22 @@ Thank you! 🙏`);
             const category = document.getElementById('prod-category').value;
             const stockStatus = document.getElementById('prod-stock').value;
 
-            // Form Validation
-            if (!brand || !name || !model || !power || !size || !weight || !coreFunction || !category) {
-                showToast('Please fill out all required fields.', 'error');
+            // Form Validation — only name and category are required
+            if (!name || !category) {
+                showToast('Please fill in at least the Product Name and Category.', 'error');
                 return;
             }
 
             // Assemble new product item matching details schema
             const newProduct = {
                 id: `prod-${Date.now()}`,
-                brand: brand,
+                brand: brand || '',
                 name: name,
-                modelNumber: model,
-                power: power,
-                size: size,
-                weight: weight,
-                function: coreFunction,
+                modelNumber: model || '',
+                power: power || '',
+                size: size || '',
+                weight: weight || '',
+                function: coreFunction || '',
                 category: category,
                 inStock: stockStatus === 'true',
                 image: currentBase64Image || null
