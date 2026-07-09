@@ -680,7 +680,8 @@ Thank you! 🙏`);
                 return;
             } catch (err) {
                 console.error('Supabase query failed, falling back to local storage:', err);
-                showToast('Cloud database sync offline. Using local backup.', 'warning');
+                const errMsg = err.message || err.details || 'Connection error';
+                showToast(`Cloud database offline: ${errMsg}. Using local backup.`, 'warning');
             }
         }
 
