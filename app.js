@@ -188,9 +188,25 @@ const initialCatalogData = [
     }
 ];
 
+// ==========================================================================
+// SUPABASE DATABASE CONFIGURATION (Optional - Fallbacks to localStorage)
+// ==========================================================================
+// Fill in your Supabase project details to save changes to the cloud database
+const SUPABASE_URL = "YOUR_SUPABASE_URL";
+const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+
+let supabaseClient = null;
+if (typeof supabase !== 'undefined' && SUPABASE_URL && SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_ANON_KEY && SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY') {
+    try {
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('Supabase client initialized successfully.');
+    } catch (e) {
+        console.error('Failed to initialize Supabase client:', e);
+    }
+}
+
 // Load catalog data from localStorage if exists, else fallback to initial defaults
 let catalogData = [];
-// Local fallback loading
 try {
     const storedData = localStorage.getItem('tools_mart_catalog');
     const isInitialized = localStorage.getItem('tools_mart_catalog_initialized');
@@ -598,14 +614,64 @@ Thank you! 🙏`);
         renderCatalog();
     });
 
-    // Load products database from API (fallback to localStorage/defaults)
+    // Load products database from Supabase/API (fallback to localStorage/defaults)
     async function loadCatalogDatabase() {
+        // --- 1. Supabase Cloud Database Flow ---
+        if (supabaseClient) {
+            try {
+                console.log('Loading catalog from Supabase Database...');
+                const { data, error } = await supabaseClient
+                    .from('products')
+                    .select('*')
+                    .order('created_at', { ascending: True });
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    console.log('Supabase table empty. Seeding initial defaults...');
+                    const seedData = initialCatalogData.map(item => ({
+                        id: item.id,
+                        brand: item.brand || '',
+                        name: item.name,
+                        modelNumber: item.modelNumber || '',
+                        power: item.power || '',
+                        size: item.size || '',
+                        weight: item.weight || '',
+                        function: item.function || '',
+                        category: item.category,
+                        inStock: item.inStock,
+                        image: item.image
+                    }));
+                    
+                    const { error: seedError } = await supabaseClient
+                        .from('products')
+                        .insert(seedData);
+
+                    if (seedError) throw seedError;
+                    catalogData = [...initialCatalogData];
+                } else {
+                    catalogData = data;
+                    console.log('Catalog loaded from Supabase database successfully.');
+                }
+                
+                // Cache locally
+                try {
+                    localStorage.setItem('tools_mart_catalog', JSON.stringify(catalogData));
+                    localStorage.setItem('tools_mart_catalog_initialized', 'true');
+                } catch (e) {}
+                renderCatalog();
+                return;
+            } catch (err) {
+                console.error('Supabase query failed, falling back to local storage:', err);
+            }
+        }
+
+        // --- 2. Local Python Server database flow ---
         try {
             const response = await fetch('/api/products');
             if (response.ok) {
                 const data = await response.json();
                 if (data.initialized === false) {
-                    // Database exists but is not initialized, initialize it with default products
                     console.log('API database not initialized. Seeding default products...');
                     await fetch('/api/products/initialize', {
                         method: 'POST',
@@ -615,32 +681,32 @@ Thank you! 🙏`);
                     catalogData = [...initialCatalogData];
                 } else {
                     catalogData = data;
-                    console.log('Catalog loaded from backend API database.', catalogData);
                 }
                 // Sync back to local storage
                 try {
                     localStorage.setItem('tools_mart_catalog', JSON.stringify(catalogData));
                     localStorage.setItem('tools_mart_catalog_initialized', 'true');
                 } catch (e) {}
-            } else {
-                throw new Error('API returned error status');
+                renderCatalog();
+                return;
             }
         } catch (err) {
             console.warn('Backend API database unavailable, using localStorage database:', err);
-            // Fallback load from localStorage
-            try {
-                const storedData = localStorage.getItem('tools_mart_catalog');
-                const isInitialized = localStorage.getItem('tools_mart_catalog_initialized');
-                if (storedData && isInitialized === 'true') {
-                    catalogData = JSON.parse(storedData);
-                } else {
-                    catalogData = [...initialCatalogData];
-                    localStorage.setItem('tools_mart_catalog', JSON.stringify(catalogData));
-                    localStorage.setItem('tools_mart_catalog_initialized', 'true');
-                }
-            } catch (e) {
+        }
+
+        // --- 3. Browser Local Storage database flow ---
+        try {
+            const storedData = localStorage.getItem('tools_mart_catalog');
+            const isInitialized = localStorage.getItem('tools_mart_catalog_initialized');
+            if (storedData && isInitialized === 'true') {
+                catalogData = JSON.parse(storedData);
+            } else {
                 catalogData = [...initialCatalogData];
+                localStorage.setItem('tools_mart_catalog', JSON.stringify(catalogData));
+                localStorage.setItem('tools_mart_catalog_initialized', 'true');
             }
+        } catch (e) {
+            catalogData = [...initialCatalogData];
         }
         renderCatalog();
     }
@@ -934,7 +1000,21 @@ Thank you! 🙏`);
     if (deleteConfirmSubmit) {
         deleteConfirmSubmit.addEventListener('click', async () => {
             if (productIdToDelete) {
-                // Delete from backend API
+                // 1. Delete from Supabase
+                if (supabaseClient) {
+                    try {
+                        const { error } = await supabaseClient
+                            .from('products')
+                            .delete()
+                            .eq('id', productIdToDelete);
+                        if (error) throw error;
+                        console.log('Product deleted from Supabase successfully.');
+                    } catch (err) {
+                        console.error('Failed to delete product from Supabase:', err);
+                    }
+                }
+
+                // 2. Delete from backend local Python API
                 try {
                     await fetch('/api/products/delete', {
                         method: 'POST',
@@ -1150,7 +1230,20 @@ Thank you! 🙏`);
                 image: currentBase64Image || null
             };
 
-            // Add to backend API
+            // 1. Add to Supabase
+            if (supabaseClient) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('products')
+                        .insert([newProduct]);
+                    if (error) throw error;
+                    console.log('Product saved to Supabase successfully.');
+                } catch (err) {
+                    console.error('Failed to save product to Supabase:', err);
+                }
+            }
+
+            // 2. Add to backend local Python API
             try {
                 await fetch('/api/products', {
                     method: 'POST',
